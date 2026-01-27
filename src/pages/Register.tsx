@@ -1,0 +1,231 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Eye, EyeOff, Mail, Lock, User, Gamepad2, Loader2, Check, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import PageTransition from '@/components/PageTransition';
+
+const Register = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Password validation
+  const passwordChecks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+  };
+
+  const isPasswordValid = Object.values(passwordChecks).every(Boolean);
+  const doPasswordsMatch = password === confirmPassword && confirmPassword.length > 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email || !password || !confirmPassword) {
+      toast({
+        title: 'กรุณากรอกข้อมูล',
+        description: 'กรุณากรอกข้อมูลให้ครบทุกช่อง',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!isPasswordValid) {
+      toast({
+        title: 'รหัสผ่านไม่ถูกต้อง',
+        description: 'กรุณาตั้งรหัสผ่านตามเงื่อนไขที่กำหนด',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!doPasswordsMatch) {
+      toast({
+        title: 'รหัสผ่านไม่ตรงกัน',
+        description: 'กรุณากรอกรหัสผ่านให้ตรงกัน',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await signUp(email, password);
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        title: 'สมัครสมาชิกไม่สำเร็จ',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'สมัครสมาชิกสำเร็จ!',
+        description: 'ยินดีต้อนรับสู่ CYBERPAY',
+      });
+      navigate('/');
+    }
+  };
+
+  const PasswordCheck = ({ valid, text }: { valid: boolean; text: string }) => (
+    <div className={`flex items-center gap-2 text-xs ${valid ? 'text-green-500' : 'text-muted-foreground'}`}>
+      {valid ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+      {text}
+    </div>
+  );
+
+  return (
+    <PageTransition>
+      <div className="min-h-screen flex items-center justify-center px-4 py-12 pb-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          {/* Logo */}
+          <div className="text-center mb-8">
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+              className="inline-flex items-center gap-3 mb-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center glow-primary">
+                <Gamepad2 className="w-7 h-7 text-background" />
+              </div>
+              <span className="text-3xl font-bold text-glow">CYBERPAY</span>
+            </motion.div>
+            <p className="text-muted-foreground">สมัครสมาชิกเพื่อรับสิทธิพิเศษ</p>
+          </div>
+
+          <Card className="glass-card border-border/50">
+            <CardHeader className="space-y-1 pb-4">
+              <CardTitle className="text-2xl font-bold text-center">สมัครสมาชิก</CardTitle>
+              <CardDescription className="text-center">
+                สร้างบัญชีใหม่เพื่อเริ่มต้นใช้งาน
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Email Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 bg-muted/50 border-border/50 focus:border-primary"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary"
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {/* Password Requirements */}
+                  <div className="grid grid-cols-2 gap-1 pt-1">
+                    <PasswordCheck valid={passwordChecks.length} text="อย่างน้อย 8 ตัว" />
+                    <PasswordCheck valid={passwordChecks.uppercase} text="ตัวพิมพ์ใหญ่" />
+                    <PasswordCheck valid={passwordChecks.lowercase} text="ตัวพิมพ์เล็ก" />
+                    <PasswordCheck valid={passwordChecks.number} text="ตัวเลข" />
+                  </div>
+                </div>
+
+                {/* Confirm Password Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">ยืนยัน Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${
+                        confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
+                      }`}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {confirmPassword && !doPasswordsMatch && (
+                    <p className="text-xs text-destructive">รหัสผ่านไม่ตรงกัน</p>
+                  )}
+                </div>
+
+                {/* Register Button */}
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-cyber hover:opacity-90 text-background font-semibold h-11 pulse-glow"
+                  disabled={isLoading || !isPasswordValid || !doPasswordsMatch}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    'สมัครสมาชิก'
+                  )}
+                </Button>
+              </form>
+
+              {/* Login Link */}
+              <p className="text-center text-sm text-muted-foreground mt-6">
+                มีบัญชีอยู่แล้ว?{' '}
+                <Link to="/login" className="text-primary hover:underline font-medium">
+                  เข้าสู่ระบบ
+                </Link>
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </PageTransition>
+  );
+};
+
+export default Register;
