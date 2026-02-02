@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Gamepad2, Loader2, Check, X, Facebook } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Gamepad2, Loader2, Check, X, Facebook } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

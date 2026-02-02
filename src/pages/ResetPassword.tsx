@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Gamepad2, Loader2, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { updatePassword } from '@/lib/mongodb';
 import PageTransition from '@/components/PageTransition';
 
 const ResetPassword = () => {
@@ -18,6 +18,10 @@ const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Get reset token from URL
+  const resetToken = searchParams.get('token') || '';
 
   // Password validation
   const passwordChecks = {
@@ -32,6 +36,15 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!resetToken) {
+      toast({
+        title: 'ลิงก์ไม่ถูกต้อง',
+        description: 'กรุณาใช้ลิงก์จาก Email ที่ได้รับ',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     if (!isPasswordValid) {
       toast({
@@ -52,13 +65,13 @@ const ResetPassword = () => {
     }
 
     setIsLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
+    const result = await updatePassword(resetToken, password);
     setIsLoading(false);
 
-    if (error) {
+    if (!result.success) {
       toast({
         title: 'เกิดข้อผิดพลาด',
-        description: error.message,
+        description: result.error || 'ไม่สามารถรีเซ็ตรหัสผ่านได้',
         variant: 'destructive',
       });
     } else {
