@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Gamepad2, Loader2, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Gamepad2, Loader2, Check, X, Facebook } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,8 @@ const Register = () => {
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>-]/.test(password), // เช็คอักขระพิเศษ
+    match: password === confirmPassword && confirmPassword !== "" // เช็ครหัสผ่านตรงกัน
   };
 
   const isPasswordValid = Object.values(passwordChecks).every(Boolean);
@@ -82,9 +85,22 @@ const Register = () => {
   };
 
   const PasswordCheck = ({ valid, text }: { valid: boolean; text: string }) => (
-    <div className={`flex items-center gap-2 text-xs ${valid ? 'text-green-500' : 'text-muted-foreground'}`}>
-      {valid ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-      {text}
+    <div
+      className={`flex items-center gap-2 text-xs transition-all duration-300 ${valid ? 'opacity-100' : 'text-muted-foreground opacity-70'
+        }`}
+      style={{ color: valid ? '#26FF95' : undefined }}
+    >
+      {valid ? (
+        <Check
+          className="w-3.5 h-3.5"
+          style={{ filter: 'drop-shadow(0 0 2px #26FF95)' }}
+        />
+      ) : (
+        <X className="w-3.5 h-3.5 opacity-50" />
+      )}
+      <span className={valid ? "font-medium" : ""}>
+        {text}
+      </span>
     </div>
   );
 
@@ -97,22 +113,23 @@ const Register = () => {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Logo */}
-          <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="inline-flex items-center gap-3 mb-4"
-            >
-              <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center glow-primary">
-                <Gamepad2 className="w-7 h-7 text-background" />
-              </div>
-              <span className="text-3xl font-bold text-glow">CYBERPAY</span>
-            </motion.div>
-            <p className="text-muted-foreground">สมัครสมาชิกเพื่อรับสิทธิพิเศษ</p>
+          <div className="text-center mb-8 pt-[5vh]">
+            {/* Logo */}
+            <div className="text-center mb-8">
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
+                className="inline-flex items-center gap-3 mb-4"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center glow-primary">
+                  <Gamepad2 className="w-7 h-7 text-background" />
+                </div>
+                <span className="text-3xl font-bold text-glow">CYBERPAY</span>
+              </motion.div>
+              <p className="text-muted-foreground">สมัครสมาชิกเพื่อรับสิทธิพิเศษ</p>
+            </div>
           </div>
-
           <Card className="glass-card border-border/50">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl font-bold text-center">สมัครสมาชิก</CardTitle>
@@ -161,13 +178,7 @@ const Register = () => {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {/* Password Requirements */}
-                  <div className="grid grid-cols-2 gap-1 pt-1">
-                    <PasswordCheck valid={passwordChecks.length} text="อย่างน้อย 8 ตัว" />
-                    <PasswordCheck valid={passwordChecks.uppercase} text="ตัวพิมพ์ใหญ่" />
-                    <PasswordCheck valid={passwordChecks.lowercase} text="ตัวพิมพ์เล็ก" />
-                    <PasswordCheck valid={passwordChecks.number} text="ตัวเลข" />
-                  </div>
+
                 </div>
 
                 {/* Confirm Password Input */}
@@ -181,9 +192,8 @@ const Register = () => {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${
-                        confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
-                      }`}
+                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
+                        }`}
                       disabled={isLoading}
                     />
                     <button
@@ -194,9 +204,42 @@ const Register = () => {
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {confirmPassword && !doPasswordsMatch && (
+
+                  {/* ส่วนแจ้งเตือน Error */}
+                  {/* {confirmPassword && !doPasswordsMatch && (
                     <p className="text-xs text-destructive">รหัสผ่านไม่ตรงกัน</p>
-                  )}
+                  )} */}
+
+                  {/* Password Requirements */}
+                  {/* Password Requirements */}
+                  <div className="flex flex-col gap-1 pt-2">
+                    {/* แถวที่ 1: ความยาว และ พิมพ์ใหญ่/เล็ก */}
+                    <div>
+                      <PasswordCheck
+                        valid={passwordChecks.uppercase && passwordChecks.lowercase}
+                        text="ตัวอักษรพิมพ์ใหญ่ (A-Z) และ ตัวอักษรพิมพ์เล็ก (a-z)" />
+                      <PasswordCheck
+                        valid={passwordChecks.number}
+                        text="ตัวเลข (0-9) อย่างน้อย 1 ตัว" />
+                      <PasswordCheck
+                        valid={passwordChecks.special}
+                        text="อักขระพิเศษ อย่างน้อย 1 ตัว" />
+                      <PasswordCheck
+                        valid={passwordChecks.length}
+                        text="ความยาวอย่างน้อย8 ตัวขึ้นไป" />
+                      <PasswordCheck
+                        valid={passwordChecks.match}
+                        text="รหัสผ่านตรงกัน" />
+                    </div>
+
+                    {/* แถวที่ 2: ตัวเลข และ อักขระพิเศษ */}
+                    <div className="flex flex-wrap gap-x-4">
+
+                    </div>
+
+                    {/* แถวที่ 3: เช็ครหัสผ่านตรงกัน */}
+
+                  </div>
                 </div>
 
                 {/* Register Button */}
@@ -211,7 +254,32 @@ const Register = () => {
                     'สมัครสมาชิก'
                   )}
                 </Button>
+              
               </form>
+              
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border/50"></span>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">OR</span>
+                </div>
+              </div>
+
+              {/* 3. กลุ่มปุ่ม Social Login (Google, Facebook, LINE) */}
+              <div className="space-y-3">
+                {/* ปุ่ม Google */}
+                <Button variant="outline" className="w-full bg-background hover:bg-muted/50">
+                  <FcGoogle className="mr-2 h-5 w-5" />
+                  Google
+                </Button>
+
+                {/* ปุ่ม Facebook */}
+                <Button variant="outline" className="w-full bg-[#1877F2]/10 border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2]/20">
+                  <Facebook className="mr-2 h-5 w-5 fill-current" />
+                  Facebook
+                </Button>
+              </div>
 
               {/* Login Link */}
               <p className="text-center text-sm text-muted-foreground mt-6">
