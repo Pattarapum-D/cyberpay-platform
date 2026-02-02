@@ -21,7 +21,7 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!email || !password) {
       toast({
         title: 'กรุณากรอกข้อมูล',
@@ -74,7 +74,7 @@ const Login = () => {
           className="w-full max-w-md"
         >
           {/* Logo */}
-          <div className="text-center mb-8 pt-20">
+          <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
@@ -141,8 +141,8 @@ const Login = () => {
 
                 {/* Forgot Password Link */}
                 <div className="flex justify-end">
-                  <Link
-                    to="/forgot-password"
+                  <Link 
+                    to="/forgot-password" 
                     className="text-sm text-primary hover:underline"
                   >
                     ลืมรหัสผ่าน?
@@ -169,7 +169,7 @@ const Login = () => {
                   <span className="w-full border-t border-border/50" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">OR</span>
+                  <span className="bg-card px-2 text-muted-foreground">หรือ</span>
                 </div>
               </div>
 
@@ -210,9 +210,21 @@ const Login = () => {
                   disabled={isLoading}
                 >
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                   Facebook
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full bg-[#00B900]/10 border-[#00B900]/30 hover:bg-[#00B900]/20 hover:border-[#00B900]/50 text-[#00B900]"
+                  disabled={isLoading}
+                >
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.365 9.863c.349 0 .63.285.631.635 0 .349-.282.634-.631.634H17.61v1.755h1.755c.349 0 .631.284.631.634 0 .35-.282.635-.631.635h-2.39a.631.631 0 01-.63-.635V9.628c0-.35.281-.635.63-.635h2.39zm-3.091 3.424c.067.122.105.263.105.412 0 .496-.4.898-.893.898a.883.883 0 01-.754-.423l-1.282-2.055-1.282 2.055a.883.883 0 01-.754.423.893.893 0 01-.893-.898c0-.149.038-.29.105-.412l1.644-2.633-1.518-2.43a.893.893 0 01.642-1.322.883.883 0 01.754.423l1.156 1.858 1.156-1.858a.883.883 0 01.754-.423c.494 0 .893.401.893.897a.897.897 0 01-.116.444l-1.518 2.43 1.644 2.633h.001zm-6.738.898c-.349 0-.63-.285-.63-.635V9.628c0-.35.281-.635.63-.635.35 0 .631.285.631.635v3.922c0 .35-.282.635-.631.635zm-2.463 0H4.68c-.349 0-.63-.285-.63-.635V9.628c0-.35.281-.635.63-.635.35 0 .631.285.631.635v3.287h1.762c.349 0 .63.284.63.634 0 .35-.281.635-.63.635zm14.927-5.73c0-4.636-4.648-8.405-10.364-8.405S1.272 3.82 1.272 8.455c0 4.157 3.684 7.644 8.667 8.304.337.073.796.223.912.512.103.26.068.668.034.93l-.147.89c-.045.276-.207 1.08.946.589 1.153-.49 6.214-3.66 8.478-6.266 1.564-1.719 2.324-3.465 2.324-5.459l.008-.001z"/>
+                  </svg>
+                  LINE
                 </Button>
               </div>
 
