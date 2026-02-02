@@ -1,10 +1,22 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { 
+  registerUser, 
+  loginUser, 
+  logoutUser, 
+  getCurrentUser, 
+  resetPassword as apiResetPassword,
+  saveAuthSession,
+  clearAuthSession
+} from '@/lib/mongodb';
+
+interface User {
+  _id?: string;
+  email: string;
+  createdAt?: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -17,74 +29,72 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    // Check for existing session on mount
+    const loadUser = async () => {
+      const savedUser = await getCurrentUser();
+      setUser(savedUser);
       setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    };
+    loadUser();
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+    const result = await registerUser(email, password);
+    
+    if (!result.success || !result.data) {
+      return { error: new Error(result.error || 'สมัครสมาชิกไม่สำเร็จ') };
+    }
+
+    // Save session and update state
+    saveAuthSession(result.data.token, result.data.user);
+    setUser(result.data.user);
+    
+    return { error: null };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
+    const result = await loginUser(email, password);
+    
+    if (!result.success || !result.data) {
+      return { error: new Error(result.error || 'เข้าสู่ระบบไม่สำเร็จ') };
+    }
+
+    // Save session and update state
+    saveAuthSession(result.data.token, result.data.user);
+    setUser(result.data.user);
+    
+    return { error: null };
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+    // Google OAuth needs to be implemented on your backend
+    // This would typically redirect to your backend's OAuth endpoint
+    return { error: new Error('Google OAuth ยังไม่ได้ตั้งค่า กรุณาติดต่อผู้ดูแลระบบ') };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await logoutUser();
+    clearAuthSession();
+    setUser(null);
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error as Error | null };
+    const result = await apiResetPassword(email);
+    
+    if (!result.success) {
+      return { error: new Error(result.error || 'ส่งอีเมลรีเซ็ตรหัสผ่านไม่สำเร็จ') };
+    }
+    
+    return { error: null };
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        session,
         loading,
         signUp,
         signIn,
