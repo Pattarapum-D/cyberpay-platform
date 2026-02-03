@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, Gamepad2, Loader2, Check, X, Eye, EyeOff } from 'lucide-react';
+import { Lock, Gamepad2, Loader2, Check, X, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/PageTransition';
+import { Link } from 'react-router-dom';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -16,8 +17,55 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Handle the recovery token from URL and verify session
+  useEffect(() => {
+    const handleRecoveryToken = async () => {
+      try {
+        // Check if there's a hash in the URL (recovery link)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+
+        if (type === 'recovery' && accessToken) {
+          // Set the session from the recovery tokens
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+
+          if (error) {
+            setErrorMessage('ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือไม่ถูกต้อง');
+            setIsValidSession(false);
+          } else {
+            setIsValidSession(true);
+          }
+        } else {
+          // Check if user already has a valid session from auth state change
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setIsValidSession(true);
+          } else {
+            setErrorMessage('ไม่พบ session ที่ถูกต้อง กรุณาขอลิงก์รีเซ็ตรหัสผ่านใหม่');
+            setIsValidSession(false);
+          }
+        }
+      } catch (error) {
+        setErrorMessage('เกิดข้อผิดพลาดในการยืนยันตัวตน');
+        setIsValidSession(false);
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    handleRecoveryToken();
+  }, []);
 
   // Password validation
   const passwordChecks = {
@@ -76,6 +124,68 @@ const ResetPassword = () => {
       {text}
     </div>
   );
+
+  // Show loading state while verifying
+  if (isVerifying) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">กำลังยืนยันตัวตน...</p>
+          </motion.div>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // Show error state if session is invalid
+  if (!isValidSession) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen flex items-center justify-center px-4 py-12 pb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-md"
+          >
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-cyber flex items-center justify-center glow-primary">
+                  <Gamepad2 className="w-7 h-7 text-background" />
+                </div>
+                <span className="text-3xl font-bold text-glow">CYBERPAY</span>
+              </div>
+            </div>
+
+            <Card className="glass-card border-border/50">
+              <CardContent className="pt-6">
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-destructive/20 flex items-center justify-center">
+                    <AlertCircle className="w-8 h-8 text-destructive" />
+                  </div>
+                  <h2 className="text-xl font-bold mb-2">ลิงก์ไม่ถูกต้อง</h2>
+                  <p className="text-muted-foreground mb-6">
+                    {errorMessage}
+                  </p>
+                  <Link to="/forgot-password">
+                    <Button className="w-full bg-gradient-cyber hover:opacity-90 text-background font-semibold">
+                      ขอลิงก์รีเซ็ตรหัสผ่านใหม่
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   return (
     <PageTransition>
