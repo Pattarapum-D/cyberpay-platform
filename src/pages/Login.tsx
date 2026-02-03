@@ -52,15 +52,24 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    const { error } = await signInWithGoogle();
-    setIsLoading(false);
-
-    if (error) {
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        toast({
+          title: 'เข้าสู่ระบบไม่สำเร็จ',
+          description: error.message,
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+      }
+      // If no error, OAuth redirect will happen
+    } catch (err) {
       toast({
         title: 'เข้าสู่ระบบไม่สำเร็จ',
-        description: error.message,
+        description: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
         variant: 'destructive',
       });
+      setIsLoading(false);
     }
   };
 
