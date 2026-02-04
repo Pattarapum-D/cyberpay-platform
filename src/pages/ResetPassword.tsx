@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import PageTransition from '@/components/PageTransition';
 
 const ResetPassword = () => {
@@ -25,6 +24,8 @@ const ResetPassword = () => {
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>-]/.test(password), // เช็คอักขระพิเศษ
+    match: password === confirmPassword && confirmPassword !== "" // เช็ครหัสผ่านตรงกัน
   };
 
   const isPasswordValid = Object.values(passwordChecks).every(Boolean);
@@ -52,22 +53,17 @@ const ResetPassword = () => {
     }
 
     setIsLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setIsLoading(false);
 
-    if (error) {
+    // TODO: Implement password reset functionality with MongoDB
+    // For now, show a placeholder message
+    setTimeout(() => {
+      setIsLoading(false);
       toast({
-        title: 'เกิดข้อผิดพลาด',
-        description: error.message,
+        title: 'ฟีเจอร์ยังไม่พร้อมใช้งาน',
+        description: 'การรีเซ็ตรหัสผ่านยังไม่ได้ถูกพัฒนาสำหรับ MongoDB',
         variant: 'destructive',
       });
-    } else {
-      toast({
-        title: 'รีเซ็ตรหัสผ่านสำเร็จ',
-        description: 'คุณสามารถเข้าสู่ระบบด้วยรหัสผ่านใหม่ได้แล้ว',
-      });
-      navigate('/login');
-    }
+    }, 1000);
   };
 
   const PasswordCheck = ({ valid, text }: { valid: boolean; text: string }) => (
@@ -134,10 +130,21 @@ const ResetPassword = () => {
                   </div>
                   {/* Password Requirements */}
                   <div className="grid grid-cols-2 gap-1 pt-1">
-                    <PasswordCheck valid={passwordChecks.length} text="อย่างน้อย 8 ตัว" />
-                    <PasswordCheck valid={passwordChecks.uppercase} text="ตัวพิมพ์ใหญ่" />
-                    <PasswordCheck valid={passwordChecks.lowercase} text="ตัวพิมพ์เล็ก" />
-                    <PasswordCheck valid={passwordChecks.number} text="ตัวเลข" />
+                    <PasswordCheck
+                      valid={passwordChecks.uppercase && passwordChecks.lowercase}
+                      text="ตัวอักษรพิมพ์ใหญ่ (A-Z) และ ตัวอักษรพิมพ์เล็ก (a-z)" />
+                    <PasswordCheck
+                      valid={passwordChecks.number}
+                      text="ตัวเลข (0-9) อย่างน้อย 1 ตัว" />
+                    <PasswordCheck
+                      valid={passwordChecks.special}
+                      text="อักขระพิเศษ อย่างน้อย 1 ตัว" />
+                    <PasswordCheck
+                      valid={passwordChecks.length}
+                      text="ความยาวอย่างน้อย8 ตัวขึ้นไป" />
+                    <PasswordCheck
+                      valid={passwordChecks.match}
+                      text="รหัสผ่านตรงกัน" />
                   </div>
                 </div>
 
@@ -152,9 +159,8 @@ const ResetPassword = () => {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${
-                        confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
-                      }`}
+                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
+                        }`}
                       disabled={isLoading}
                     />
                     <button

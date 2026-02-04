@@ -1,14 +1,21 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { AuthService, AuthResponse } from '@/services/authService';
+
+interface User {
+  id: string;
+  email: string;
+  profile: {
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, username?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
@@ -17,78 +24,85 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // Check for existing token on app load
+    const checkAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        const decoded = await AuthService.verifyToken(token);
+        if (decoded) {
+          const userData = await AuthService.getUserById(decoded.userId);
+          if (userData) {
+            setUser({
+              id: userData._id.toString(),
+              email: userData.email,
+              profile: userData.profile,
+            });
+          } else {
+            localStorage.removeItem('auth_token');
+          }
+        } else {
+          localStorage.removeItem('auth_token');
+        }
       }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+  const signUp = async (email: string, password: string, username?: string) => {
+    try {
+      const response: AuthResponse = await AuthService.register(email, password, username);
+
+      if (response.success && response.user && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        setUser(response.user);
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Registration failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
+    try {
+      const response: AuthResponse = await AuthService.login(email, password);
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+      if (response.success && response.user && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        setUser(response.user);
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Login failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('auth_token');
+    setUser(null);
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error as Error | null };
+    // TODO: Implement password reset functionality
+    // For now, return a placeholder
+    return { error: new Error('Password reset not implemented yet') };
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        session,
         loading,
         signUp,
         signIn,
-        signInWithGoogle,
         signOut,
         resetPassword,
       }}
