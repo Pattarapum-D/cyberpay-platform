@@ -1,6 +1,3 @@
-// Mock authentication service for browser compatibility
-// In production, this should be replaced with proper backend API calls
-
 export interface AuthResponse {
     success: boolean;
     user?: {
@@ -16,10 +13,6 @@ export interface AuthResponse {
     message?: string;
 }
 
-// Mock user storage (in production, this would be in a real database)
-const mockUsers = new Map<string, any>();
-
-// เปลี่ยนจาก mock เป็น API calls จริง
 export class AuthService {
     static async register(email: string, password: string, username?: string): Promise<AuthResponse> {
         try {
@@ -87,8 +80,22 @@ export class AuthService {
 
     static async verifyToken(token: string): Promise<{ userId: string; email: string } | null> {
         try {
-            const decoded = JSON.parse(atob(token));
-            return decoded;
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    userId: data.user.id,
+                    email: data.user.email,
+                };
+            }
+            return null;
         } catch (error) {
             return null;
         }
@@ -96,15 +103,119 @@ export class AuthService {
 
     static async getUserById(userId: string): Promise<any | null> {
         try {
-            // Find user by ID in mock storage
-            for (const [email, user] of mockUsers.entries()) {
-                if (user.id === userId) {
-                    return user;
-                }
+            const token = localStorage.getItem('auth_token');
+            if (!token) return null;
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    _id: data.user.id,
+                    email: data.user.email,
+                    profile: data.user.profile,
+                };
             }
             return null;
         } catch (error) {
             return null;
+        }
+    }
+
+    // Forgot Password - ส่งอีเมลรีเซ็ต
+    static async forgotPassword(email: string): Promise<AuthResponse> {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await response.json();
+            return {
+                success: data.success,
+                message: data.message,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Network error. Please try again.',
+            };
+        }
+    }
+
+    static async verifyResetOTP(email: string, otp: string): Promise<AuthResponse & { resetToken?: string }> {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/verify-reset-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, otp }),
+            });
+
+            const data = await response.json();
+            return {
+                success: data.success,
+                message: data.message,
+                resetToken: data.resetToken,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Network error. Please try again.',
+            };
+        }
+    }
+
+    static async resetPassword(resetToken: string, newPassword: string): Promise<AuthResponse> {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ resetToken, newPassword }),
+            });
+
+            const data = await response.json();
+            return {
+                success: data.success,
+                message: data.message,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Network error. Please try again.',
+            };
+        }
+    }
+
+
+
+    // Verify Reset Token - ตรวจสอบว่า token ยังใช้ได้หรือไม่
+    static async verifyResetToken(token: string): Promise<AuthResponse> {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/verify-reset-token/${token}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+
+            return {
+                success: data.success,
+                message: data.message,
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: 'Network error. Please try again.',
+            };
         }
     }
 }

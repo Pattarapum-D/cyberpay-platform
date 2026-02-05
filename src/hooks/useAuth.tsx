@@ -17,7 +17,9 @@ interface AuthContextType {
   signUp: (email: string, password: string, username?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  forgotPassword: (email: string) => Promise<{ error: Error | null }>;
+  verifyResetOTP: (email: string, otp: string) => Promise<{ error: Error | null; resetToken?: string }>;
+  resetPasswordWithToken: (resetToken: string, newPassword: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,12 +92,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  const resetPassword = async (email: string) => {
-    // TODO: Implement password reset functionality
-    // For now, return a placeholder
-    return { error: new Error('Password reset not implemented yet') };
+  const forgotPassword = async (email: string) => {
+    try {
+      const response = await AuthService.forgotPassword(email);
+      if (response.success) {
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Failed to send reset email') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
+  const verifyResetOTP = async (email: string, otp: string) => {
+    try {
+      const response = await AuthService.verifyResetOTP(email, otp);
+      if (response.success) {
+        return { error: null, resetToken: response.resetToken };
+      } else {
+        return { error: new Error(response.message || 'OTP verification failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const resetPasswordWithToken = async (resetToken: string, newPassword: string) => {
+    try {
+      const response = await AuthService.resetPassword(resetToken, newPassword);
+      if (response.success) {
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Password reset failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
   return (
     <AuthContext.Provider
       value={{
@@ -104,12 +138,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signIn,
         signOut,
-        resetPassword,
+        forgotPassword,
+        verifyResetOTP,
+        resetPasswordWithToken,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+
 }
 
 export function useAuth() {

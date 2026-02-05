@@ -1,5 +1,6 @@
+// src/pages/ResetPassword.tsx - เก็บ UI เดิม แต่เปลี่ยนแค่ logic
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Gamepad2, Loader2, Check, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import PageTransition from '@/components/PageTransition';
 
 const ResetPassword = () => {
@@ -15,21 +17,38 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
-  // Password validation
+  const { toast } = useToast();
+  const { resetPasswordWithToken } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // รับ resetToken จาก navigation state
+  const resetToken = location.state?.resetToken;
+  const email = location.state?.email;
+
+  useEffect(() => {
+    if (!resetToken) {
+      toast({
+        title: 'ไม่พบ Token',
+        description: 'กรุณาเริ่มกระบวนการรีเซ็ตรหัสผ่านใหม่',
+        variant: 'destructive',
+      });
+      navigate('/forgot-password');
+    }
+  }, [resetToken, navigate, toast]);
+
+  // Password validation - เหมือนเดิม
   const passwordChecks = {
     length: password.length >= 8,
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
-    special: /[!@#$%^&*(),.?":{}|<>-]/.test(password), // เช็คอักขระพิเศษ
-    match: password === confirmPassword && confirmPassword !== "" // เช็ครหัสผ่านตรงกัน
+    special: /[!@#$%^&*(),.?":{}|<>-]/.test(password),
+    match: password === confirmPassword && confirmPassword !== ""
   };
 
   const isPasswordValid = Object.values(passwordChecks).every(Boolean);
-  const doPasswordsMatch = password === confirmPassword && confirmPassword.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,27 +62,26 @@ const ResetPassword = () => {
       return;
     }
 
-    if (!doPasswordsMatch) {
-      toast({
-        title: 'รหัสผ่านไม่ตรงกัน',
-        description: 'กรุณากรอกรหัสผ่านให้ตรงกัน',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsLoading(true);
 
-    // TODO: Implement password reset functionality with MongoDB
-    // For now, show a placeholder message
-    setTimeout(() => {
-      setIsLoading(false);
+    // ใช้ resetPasswordWithToken แทน supabase
+    const { error } = await resetPasswordWithToken(resetToken, password);
+
+    if (error) {
       toast({
-        title: 'ฟีเจอร์ยังไม่พร้อมใช้งาน',
-        description: 'การรีเซ็ตรหัสผ่านยังไม่ได้ถูกพัฒนาสำหรับ MongoDB',
+        title: 'เกิดข้อผิดพลาด',
+        description: error.message,
         variant: 'destructive',
       });
-    }, 1000);
+    } else {
+      toast({
+        title: 'รีเซ็ตรหัสผ่านสำเร็จ',
+        description: 'คุณสามารถเข้าสู่ระบบด้วยรหัสผ่านใหม่ได้แล้ว',
+      });
+      navigate('/login');
+    }
+
+    setIsLoading(false);
   };
 
   const PasswordCheck = ({ valid, text }: { valid: boolean; text: string }) => (
@@ -82,7 +100,7 @@ const ResetPassword = () => {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Logo */}
+          {/* Logo - เหมือนเดิม */}
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0.8 }}
@@ -104,9 +122,10 @@ const ResetPassword = () => {
                 กรุณาตั้งรหัสผ่านใหม่ของคุณ
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Password Input */}
+                {/* Password Input - เหมือนเดิม */}
                 <div className="space-y-2">
                   <Label htmlFor="password">รหัสผ่านใหม่</Label>
                   <div className="relative">
@@ -128,27 +147,11 @@ const ResetPassword = () => {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {/* Password Requirements */}
-                  <div className="grid grid-cols-2 gap-1 pt-1">
-                    <PasswordCheck
-                      valid={passwordChecks.uppercase && passwordChecks.lowercase}
-                      text="ตัวอักษรพิมพ์ใหญ่ (A-Z) และ ตัวอักษรพิมพ์เล็ก (a-z)" />
-                    <PasswordCheck
-                      valid={passwordChecks.number}
-                      text="ตัวเลข (0-9) อย่างน้อย 1 ตัว" />
-                    <PasswordCheck
-                      valid={passwordChecks.special}
-                      text="อักขระพิเศษ อย่างน้อย 1 ตัว" />
-                    <PasswordCheck
-                      valid={passwordChecks.length}
-                      text="ความยาวอย่างน้อย8 ตัวขึ้นไป" />
-                    <PasswordCheck
-                      valid={passwordChecks.match}
-                      text="รหัสผ่านตรงกัน" />
-                  </div>
+
+
                 </div>
 
-                {/* Confirm Password Input */}
+                {/* Confirm Password Input - เหมือนเดิม */}
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">ยืนยันรหัสผ่านใหม่</Label>
                   <div className="relative">
@@ -159,7 +162,7 @@ const ResetPassword = () => {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
+                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${confirmPassword && !passwordChecks.match ? 'border-destructive' : ''
                         }`}
                       disabled={isLoading}
                     />
@@ -171,16 +174,36 @@ const ResetPassword = () => {
                       {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {confirmPassword && !doPasswordsMatch && (
+                  {confirmPassword && !passwordChecks.match && (
                     <p className="text-xs text-destructive">รหัสผ่านไม่ตรงกัน</p>
                   )}
+                  {/* Password Requirements - เหมือนเดิม */}
+                  <div className="flex flex-col gap-1 pt-2">
+                    <div>
+                      <PasswordCheck
+                        valid={passwordChecks.uppercase && passwordChecks.lowercase}
+                        text="ตัวอักษรพิมพ์ใหญ่ (A-Z) และ ตัวอักษรพิมพ์เล็ก (a-z)" />
+                      <PasswordCheck
+                        valid={passwordChecks.number}
+                        text="ตัวเลข (0-9) อย่างน้อย 1 ตัว" />
+                      <PasswordCheck
+                        valid={passwordChecks.special}
+                        text="อักขระพิเศษ อย่างน้อย 1 ตัว" />
+                      <PasswordCheck
+                        valid={passwordChecks.length}
+                        text="ความยาวอย่างน้อย8 ตัวขึ้นไป" />
+                      <PasswordCheck
+                        valid={passwordChecks.match}
+                        text="รหัสผ่านตรงกัน" />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Submit Button */}
+                {/* Submit Button - เหมือนเดิม */}
                 <Button
                   type="submit"
                   className="w-full bg-gradient-cyber hover:opacity-90 text-background font-semibold h-11 pulse-glow"
-                  disabled={isLoading || !isPasswordValid || !doPasswordsMatch}
+                  disabled={isLoading || !isPasswordValid}
                 >
                   {isLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

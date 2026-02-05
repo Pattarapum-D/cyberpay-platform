@@ -4,12 +4,15 @@ const cors = require('cors');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
+// const emailService = require('./services/emailService');
+
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+// emailService.testConnection();
 
 // Routes
 app.use('/api/auth', authRoutes);

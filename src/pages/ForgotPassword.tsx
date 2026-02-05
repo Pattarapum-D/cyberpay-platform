@@ -1,37 +1,33 @@
+// src/pages/ForgotPassword.tsx - ใช้ UI เดิม
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Gamepad2, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Mail, Gamepad2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import PageTransition from '@/components/PageTransition';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [showOTP, setShowOTP] = useState(false); // แค่ toggle ระหว่าง email/otp
   const [isLoading, setIsLoading] = useState(false);
-  const [isEmailSent, setIsEmailSent] = useState(false);
-  const { resetPassword } = useAuth();
+
   const { toast } = useToast();
+  const { forgotPassword, verifyResetOTP } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // ส่ง OTP
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!email) {
-      toast({
-        title: 'กรุณากรอก Email',
-        description: 'กรุณากรอก Email ที่ใช้สมัครสมาชิก',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setIsLoading(true);
-    const { error } = await resetPassword(email);
-    setIsLoading(false);
+
+    const { error } = await forgotPassword(email);
 
     if (error) {
       toast({
@@ -40,12 +36,35 @@ const ForgotPassword = () => {
         variant: 'destructive',
       });
     } else {
-      setIsEmailSent(true);
       toast({
-        title: 'ส่ง Email สำเร็จ',
-        description: 'กรุณาตรวจสอบ Email ของคุณ',
+        title: 'ส่งรหัส OTP แล้ว',
+        description: 'กรุณาตรวจสอบอีเมลของคุณ',
       });
+      setShowOTP(true); // แสดง OTP input
     }
+
+    setIsLoading(false);
+  };
+
+  // ยืนยัน OTP
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const { error, resetToken } = await verifyResetOTP(email, otp);
+
+    if (error) {
+      toast({
+        title: 'รหัส OTP ไม่ถูกต้อง',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      // ไปหน้า reset password พร้อม token
+      navigate('/reset-password', { state: { resetToken, email } });
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -57,7 +76,7 @@ const ForgotPassword = () => {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          {/* Logo */}
+          {/* Logo - เหมือนเดิม */}
           <div className="text-center mb-8">
             <motion.div
               initial={{ scale: 0.8 }}
@@ -75,41 +94,22 @@ const ForgotPassword = () => {
           <Card className="glass-card border-border/50">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl font-bold text-center">
-                {isEmailSent ? 'ตรวจสอบ Email' : 'ลืมรหัสผ่าน'}
+                {!showOTP ? 'ลืมรหัสผ่าน' : 'ยืนยัน OTP'}
               </CardTitle>
               <CardDescription className="text-center">
-                {isEmailSent 
-                  ? 'เราได้ส่งลิงก์สำหรับรีเซ็ตรหัสผ่านไปยัง Email ของคุณแล้ว'
-                  : 'กรอก Email เพื่อรับลิงก์รีเซ็ตรหัสผ่าน'
+                {!showOTP
+                  ? 'กรอกอีเมลเพื่อรับรหัส OTP'
+                  : `ส่งรหัส OTP ไปยัง ${email}`
                 }
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-4">
-              {isEmailSent ? (
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="text-center py-6"
-                >
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
-                    <CheckCircle className="w-8 h-8 text-green-500" />
-                  </div>
-                  <p className="text-muted-foreground mb-6">
-                    หากไม่พบ Email กรุณาตรวจสอบโฟลเดอร์ Spam
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEmailSent(false)}
-                    className="w-full"
-                  >
-                    ส่งอีกครั้ง
-                  </Button>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Email Input */}
+              {/* Email Form - แสดงเมื่อยังไม่ส่ง OTP */}
+              {!showOTP && (
+                <form onSubmit={handleSendOTP} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">อีเมล</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
@@ -119,34 +119,85 @@ const ForgotPassword = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10 bg-muted/50 border-border/50 focus:border-primary"
+                        required
                         disabled={isLoading}
                       />
                     </div>
                   </div>
 
-                  {/* Submit Button */}
                   <Button
                     type="submit"
                     className="w-full bg-gradient-cyber hover:opacity-90 text-background font-semibold h-11 pulse-glow"
-                    disabled={isLoading}
+                    disabled={isLoading || !email}
                   >
                     {isLoading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      'ส่งลิงก์รีเซ็ตรหัสผ่าน'
+                      'ส่งรหัส OTP'
                     )}
                   </Button>
                 </form>
               )}
 
-              {/* Back to Login Link */}
-              <Link 
-                to="/login" 
-                className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mt-4"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                กลับไปหน้าเข้าสู่ระบบ
-              </Link>
+              {/* OTP Form - แสดงเมื่อส่ง OTP แล้ว */}
+              {showOTP && (
+                <form onSubmit={handleVerifyOTP} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">รหัส OTP (6 หลัก)</Label>
+                    <div className="flex justify-center">
+                      <InputOTP
+                        maxLength={6}
+                        value={otp}
+                        onChange={(value) => setOtp(value)}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-cyber hover:opacity-90 text-background font-semibold h-11 pulse-glow"
+                    disabled={isLoading || otp.length !== 6}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      'ยืนยัน OTP'
+                    )}
+                  </Button>
+
+                  {/* ปุ่มกลับไปกรอกอีเมลใหม่ */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowOTP(false);
+                      setOtp('');
+                    }}
+                    className="w-full"
+                  >
+                    กรอกอีเมลใหม่
+                  </Button>
+                </form>
+              )}
+
+              {/* Link กลับไป Login - เหมือนเดิม */}
+              <div className="text-center">
+                <Link
+                  to="/login"
+                  className="text-sm text-primary hover:underline"
+                >
+                  กลับไปหน้าเข้าสู่ระบบ
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

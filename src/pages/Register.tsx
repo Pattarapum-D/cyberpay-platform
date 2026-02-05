@@ -84,6 +84,24 @@ const Register = () => {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    // TODO: Implement Google Sign Up
+    toast({
+      title: 'ยังใช้ไม่ได้',
+      description: 'Google Sign Up ยังใช้ไม่ได้',
+      variant: 'destructive',
+    });
+  };
+
+  const handleFacebookSignUp = async () => {
+    // TODO: Implement Facebook Sign Up
+    toast({
+      title: 'ยังใช้ไม่ได้',
+      description: 'Facebook Sign Up ยังใช้ไม่ได้',
+      variant: 'destructive',
+    });
+  };
+
   const PasswordCheck = ({ valid, text }: { valid: boolean; text: string }) => (
     <div
       className={`flex items-center gap-2 text-xs transition-all duration-300 ${valid ? 'opacity-100' : 'text-muted-foreground opacity-70'
@@ -213,7 +231,6 @@ const Register = () => {
                   {/* Password Requirements */}
                   {/* Password Requirements */}
                   <div className="flex flex-col gap-1 pt-2">
-                    {/* แถวที่ 1: ความยาว และ พิมพ์ใหญ่/เล็ก */}
                     <div>
                       <PasswordCheck
                         valid={passwordChecks.uppercase && passwordChecks.lowercase}
@@ -254,9 +271,9 @@ const Register = () => {
                     'สมัครสมาชิก'
                   )}
                 </Button>
-              
+
               </form>
-              
+
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border/50"></span>
@@ -266,16 +283,26 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* 3. กลุ่มปุ่ม Social Login (Google, Facebook, LINE) */}
+              {/* 3. กลุ่มปุ่ม Social Login (Google, Facebook) */}
               <div className="space-y-3">
                 {/* ปุ่ม Google */}
-                <Button variant="outline" className="w-full bg-background hover:bg-muted/50">
+                <Button
+                  variant="outline"
+                  className="w-full bg-background hover:bg-muted/50"
+                  onClick={handleGoogleSignUp}
+                  disabled={isLoading}
+                >
                   <FcGoogle className="mr-2 h-5 w-5" />
                   Google
                 </Button>
 
                 {/* ปุ่ม Facebook */}
-                <Button variant="outline" className="w-full bg-[#1877F2]/10 border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2]/20">
+                <Button
+                  variant="outline"
+                  className="w-full bg-[#1877F2]/10 border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2]/20"
+                  onClick={handleFacebookSignUp}
+                  disabled={isLoading}
+                >
                   <Facebook className="mr-2 h-5 w-5 fill-current" />
                   Facebook
                 </Button>
