@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, Gamepad2, Loader2, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Gamepad2, Loader2, Check, X, Facebook } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,10 +28,12 @@ const Register = () => {
     uppercase: /[A-Z]/.test(password),
     lowercase: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    match: password === confirmPassword && confirmPassword.length > 0,
   };
 
-  const isPasswordValid = Object.values(passwordChecks).every(Boolean);
-  const doPasswordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const isPasswordValid = passwordChecks.length && passwordChecks.uppercase && passwordChecks.lowercase && passwordChecks.number && passwordChecks.special;
+  const doPasswordsMatch = passwordChecks.match;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,9 +202,8 @@ const Register = () => {
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${
-                        confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
-                      }`}
+                      className={`pl-10 pr-10 bg-muted/50 border-border/50 focus:border-primary ${confirmPassword && !doPasswordsMatch ? 'border-destructive' : ''
+                        }`}
                       disabled={isLoading}
                     />
                     <button
@@ -214,7 +216,7 @@ const Register = () => {
                   </div>
                   {confirmPassword && !doPasswordsMatch && (
                     <p className="text-xs text-destructive">รหัสผ่านไม่ตรงกัน</p>
-                  )} */}
+                  )} */{'}'}
 
                   {/* Password Requirements */}
                   {/* Password Requirements */}
@@ -260,9 +262,9 @@ const Register = () => {
                     'สมัครสมาชิก'
                   )}
                 </Button>
-              
+
               </form>
-              
+
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border/50"></span>

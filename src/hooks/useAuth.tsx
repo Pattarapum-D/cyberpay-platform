@@ -72,21 +72,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
+    try {
+      const response: AuthResponse = await AuthService.login(email, password);
 
-  const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+      if (response.success && response.user && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        setUser(response.user);
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Login failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {

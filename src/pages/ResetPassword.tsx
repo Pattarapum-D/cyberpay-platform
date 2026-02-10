@@ -18,9 +18,36 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
   const { resetPasswordWithToken } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Verify reset token on component mount
+  useEffect(() => {
+    const verifyToken = async () => {
+      // Get token from URL query params
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token');
+
+      if (!token) {
+        setIsValidSession(false);
+        setErrorMessage('ไม่พบ token สำหรับรีเซ็ตรหัสผ่าน กรุณาขอลิงก์ใหม่');
+        setIsVerifying(false);
+        return;
+      }
+
+      setResetToken(token);
+      setIsValidSession(true);
+      setIsVerifying(false);
+    };
+
+    verifyToken();
+  }, [location]);
 
   // Password validation - เหมือนเดิม
   const passwordChecks = {
