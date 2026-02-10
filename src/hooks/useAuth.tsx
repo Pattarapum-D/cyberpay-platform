@@ -1,54 +1,74 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { AuthService, AuthResponse } from '@/services/authService';
+
+interface User {
+  id: string;
+  email: string;
+  profile: {
+    username?: string;
+    display_name?: string;
+    avatar_url?: string;
+  };
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, username?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  forgotPassword: (email: string) => Promise<{ error: Error | null }>;
+  verifyResetOTP: (email: string, otp: string) => Promise<{ error: Error | null; resetToken?: string }>;
+  resetPasswordWithToken: (resetToken: string, newPassword: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // Check for existing token on app load
+    const checkAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        const decoded = await AuthService.verifyToken(token);
+        if (decoded) {
+          const userData = await AuthService.getUserById(decoded.userId);
+          if (userData) {
+            setUser({
+              id: userData._id.toString(),
+              email: userData.email,
+              profile: userData.profile,
+            });
+          } else {
+            localStorage.removeItem('auth_token');
+          }
+        } else {
+          localStorage.removeItem('auth_token');
+        }
       }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    return { error: error as Error | null };
+  const signUp = async (email: string, password: string, username?: string) => {
+    try {
+      const response: AuthResponse = await AuthService.register(email, password, username);
+
+      if (response.success && response.user && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        setUser(response.user);
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Registration failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
@@ -60,44 +80,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    return { error: error as Error | null };
+  };
+
+  const signOut = async () => {
+    localStorage.removeItem('auth_token');
+    setUser(null);
+  };
+
+  const forgotPassword = async (email: string) => {
     try {
-      const { lovable } = await import('@/integrations/lovable');
-      const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
-      });
-      return { error: result.error };
+      const response = await AuthService.forgotPassword(email);
+      if (response.success) {
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Failed to send reset email') };
+      }
     } catch (error) {
       return { error: error as Error };
     }
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const verifyResetOTP = async (email: string, otp: string) => {
+    try {
+      const response = await AuthService.verifyResetOTP(email, otp);
+      if (response.success) {
+        return { error: null, resetToken: response.resetToken };
+      } else {
+        return { error: new Error(response.message || 'OTP verification failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
-  const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    return { error: error as Error | null };
+  const resetPasswordWithToken = async (resetToken: string, newPassword: string) => {
+    try {
+      const response = await AuthService.resetPassword(resetToken, newPassword);
+      if (response.success) {
+        return { error: null };
+      } else {
+        return { error: new Error(response.message || 'Password reset failed') };
+      }
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
-
   return (
     <AuthContext.Provider
       value={{
         user,
-        session,
         loading,
         signUp,
         signIn,
-        signInWithGoogle,
         signOut,
-        resetPassword,
+        forgotPassword,
+        verifyResetOTP,
+        resetPasswordWithToken,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
+
 }
 
 export function useAuth() {

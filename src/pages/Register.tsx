@@ -81,6 +81,24 @@ const Register = () => {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    // TODO: Implement Google Sign Up
+    toast({
+      title: 'ยังใช้ไม่ได้',
+      description: 'Google Sign Up ยังใช้ไม่ได้',
+      variant: 'destructive',
+    });
+  };
+
+  const handleFacebookSignUp = async () => {
+    // TODO: Implement Facebook Sign Up
+    toast({
+      title: 'ยังใช้ไม่ได้',
+      description: 'Facebook Sign Up ยังใช้ไม่ได้',
+      variant: 'destructive',
+    });
+  };
+
   const PasswordCheck = ({ valid, text }: { valid: boolean; text: string }) => (
     <div className={`flex items-center gap-2 text-xs ${valid ? 'text-green-500' : 'text-muted-foreground'}`}>
       {valid ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
@@ -196,7 +214,38 @@ const Register = () => {
                   </div>
                   {confirmPassword && !doPasswordsMatch && (
                     <p className="text-xs text-destructive">รหัสผ่านไม่ตรงกัน</p>
-                  )}
+                  )} */}
+
+                  {/* Password Requirements */}
+                  {/* Password Requirements */}
+                  <div className="flex flex-col gap-1 pt-2">
+                    {/* แถวที่ 1: ความยาว และ พิมพ์ใหญ่/เล็ก */}
+                    <div>
+                      <PasswordCheck
+                        valid={passwordChecks.uppercase && passwordChecks.lowercase}
+                        text="ตัวอักษรพิมพ์ใหญ่ (A-Z) และ ตัวอักษรพิมพ์เล็ก (a-z)" />
+                      <PasswordCheck
+                        valid={passwordChecks.number}
+                        text="ตัวเลข (0-9) อย่างน้อย 1 ตัว" />
+                      <PasswordCheck
+                        valid={passwordChecks.special}
+                        text="อักขระพิเศษ อย่างน้อย 1 ตัว" />
+                      <PasswordCheck
+                        valid={passwordChecks.length}
+                        text="ความยาวอย่างน้อย8 ตัวขึ้นไป" />
+                      <PasswordCheck
+                        valid={passwordChecks.match}
+                        text="รหัสผ่านตรงกัน" />
+                    </div>
+
+                    {/* แถวที่ 2: ตัวเลข และ อักขระพิเศษ */}
+                    <div className="flex flex-wrap gap-x-4">
+
+                    </div>
+
+                    {/* แถวที่ 3: เช็ครหัสผ่านตรงกัน */}
+
+                  </div>
                 </div>
 
                 {/* Register Button */}
@@ -211,7 +260,32 @@ const Register = () => {
                     'สมัครสมาชิก'
                   )}
                 </Button>
+              
               </form>
+              
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border/50"></span>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">OR</span>
+                </div>
+              </div>
+
+              {/* 3. กลุ่มปุ่ม Social Login (Google, Facebook, LINE) */}
+              <div className="space-y-3">
+                {/* ปุ่ม Google */}
+                <Button variant="outline" className="w-full bg-background hover:bg-muted/50">
+                  <FcGoogle className="mr-2 h-5 w-5" />
+                  Google
+                </Button>
+
+                {/* ปุ่ม Facebook */}
+                <Button variant="outline" className="w-full bg-[#1877F2]/10 border-[#1877F2]/30 text-[#1877F2] hover:bg-[#1877F2]/20">
+                  <Facebook className="mr-2 h-5 w-5 fill-current" />
+                  Facebook
+                </Button>
+              </div>
 
               {/* Login Link */}
               <p className="text-center text-sm text-muted-foreground mt-6">
