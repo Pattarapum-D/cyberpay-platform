@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import PageTransition from '@/components/PageTransition';
 
 const Register = () => {
@@ -18,6 +20,8 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const { signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -250,11 +254,34 @@ const Register = () => {
                   </div>
                 </div>
 
+                {/* Terms Acceptance */}
+                <div className="flex items-center justify-between rounded-md border border-border/50 bg-muted/30 px-3 py-3">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptTerms}
+                      onCheckedChange={(checked) => setAcceptTerms(checked === true)}
+                    />
+                    <label htmlFor="terms" className="text-sm font-medium text-destructive cursor-pointer select-none leading-tight">
+                      ฉันยอมรับข้อกำหนดในการให้บริการ และ<br />นโยบายความเป็นส่วนตัว
+                    </label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowTerms(true)}
+                    className="shrink-0 text-xs"
+                  >
+                    Read more
+                  </Button>
+                </div>
+
                 {/* Register Button */}
                 <Button
                   type="submit"
                   className="w-full bg-gradient-cyber hover:opacity-90 text-background font-semibold h-11 pulse-glow"
-                  disabled={isLoading || !isPasswordValid || !doPasswordsMatch}
+                  disabled={isLoading || !isPasswordValid || !doPasswordsMatch || !acceptTerms}
                 >
                   {isLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -300,6 +327,28 @@ const Register = () => {
           </Card>
         </motion.div>
       </div>
+      {/* Terms Dialog */}
+      <Dialog open={showTerms} onOpenChange={setShowTerms}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>ข้อกำหนดในการให้บริการ และนโยบายความเป็นส่วนตัว</DialogTitle>
+          </DialogHeader>
+          <DialogDescription asChild>
+            <div className="space-y-4 text-sm text-muted-foreground">
+              <h3 className="font-semibold text-foreground">ข้อกำหนดในการให้บริการ</h3>
+              <p>1. ผู้ใช้งานต้องให้ข้อมูลที่ถูกต้องและเป็นปัจจุบันในการสมัครสมาชิก</p>
+              <p>2. ห้ามใช้บัญชีผู้อื่นในการทำธุรกรรม</p>
+              <p>3. การเติมเงินทุกรายการจะไม่สามารถขอคืนเงินได้หลังจากดำเนินการสำเร็จ</p>
+              <p>4. ทีมงานขอสงวนสิทธิ์ในการระงับบัญชีที่มีพฤติกรรมผิดปกติ</p>
+              <h3 className="font-semibold text-foreground pt-2">นโยบายความเป็นส่วนตัว</h3>
+              <p>1. เราเก็บรวบรวมข้อมูลส่วนบุคคลเท่าที่จำเป็นสำหรับการให้บริการ</p>
+              <p>2. ข้อมูลของคุณจะไม่ถูกเปิดเผยต่อบุคคลที่สามโดยไม่ได้รับความยินยอม</p>
+              <p>3. คุณสามารถขอลบข้อมูลส่วนบุคคลได้ตลอดเวลา</p>
+              <p>4. เราใช้มาตรการรักษาความปลอดภัยเพื่อปกป้องข้อมูลของคุณ</p>
+            </div>
+          </DialogDescription>
+        </DialogContent>
+      </Dialog>
     </PageTransition>
   );
 };
