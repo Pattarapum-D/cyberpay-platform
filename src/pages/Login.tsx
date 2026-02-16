@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { lovable } from '@/integrations/lovable';
 import PageTransition from '@/components/PageTransition';
 
 const Login = () => {
@@ -53,13 +54,15 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
-    const { error } = await signInWithGoogle();
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
     setIsLoading(false);
 
-    if (error) {
+    if (result?.error) {
       toast({
         title: 'เข้าสู่ระบบไม่สำเร็จ',
-        description: error.message,
+        description: result.error.message || 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้',
         variant: 'destructive',
       });
     }
@@ -228,7 +231,4 @@ const Login = () => {
 };
 
 export default Login;
-function signInWithGoogle(): { error: any; } | PromiseLike<{ error: any; }> {
-  throw new Error('Function not implemented.');
-}
 
