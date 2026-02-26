@@ -1,8 +1,6 @@
 # Game Top-up System - ระบบเติมเกมผ่าน UID
 
-โปรเจกต์ระบบเติมเกมที่ใช้ Next.js 15.3.3 + NestJS 11.0.7 + PostgreSQL 18
-
-> 🗂️ **โค้ดเก่า** (React + Vite + Express + MongoDB) อยู่ใน folder `old/`
+โปรเจกต์ใหม่ที่ใช้ Next.js 15.3.3 + NestJS 11.0.7 + PostgreSQL 18
 
 ## 📋 Tech Stack
 
@@ -32,7 +30,7 @@
 
 ## 🚀 การติดตั้ง
 
-### 1. ติดตั้ง Dependencies
+### 1. Clone และติดตั้ง Dependencies
 
 ```bash
 # ติดตั้ง Backend
@@ -80,6 +78,13 @@ npx prisma generate
 npx prisma migrate dev --name init
 ```
 
+### 5. (Optional) Seed Database
+
+```bash
+cd backend
+npx prisma db seed
+```
+
 ---
 
 ## 🏃 การรันโปรเจกต์
@@ -105,7 +110,7 @@ Frontend จะรันที่ http://localhost:3000
 ## 📁 โครงสร้างโปรเจกต์
 
 ```
-cyberpay-platform/
+project-root/
 ├── backend/                    # NestJS Backend
 │   ├── prisma/
 │   │   └── schema.prisma      # Database Schema
@@ -123,18 +128,23 @@ cyberpay-platform/
 ├── frontend/                   # Next.js Frontend
 │   ├── src/
 │   │   ├── app/               # App Router Pages
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── login/
+│   │   │   ├── register/
+│   │   │   └── globals.css
 │   │   ├── components/        # React Components
+│   │   │   ├── ui/           # shadcn/ui Components
+│   │   │   ├── header.tsx
+│   │   │   ├── bottom-nav.tsx
+│   │   │   └── ...
 │   │   ├── hooks/            # Custom Hooks
-│   │   └── lib/              # Utilities
+│   │   ├── lib/              # Utilities
+│   │   └── services/         # API Services
 │   ├── .env.local
 │   └── package.json
 │
-├── old/                        # โค้ดเก่า (React + Vite + Express)
-│   ├── src/
-│   ├── server/
-│   └── ...
-│
-└── README.md
+└── MIGRATION_PLAN.md          # แผนการ Migrate
 ```
 
 ---
@@ -179,6 +189,9 @@ cyberpay-platform/
 - `GET /api/orders` - ดูประวัติการสั่งซื้อ
 - `POST /api/orders` - สร้างคำสั่งซื้อใหม่
 - `GET /api/orders/:id` - ดูรายละเอียดคำสั่งซื้อ
+
+### Users
+- `GET /api/users/profile` - ดูโปรไฟล์
 
 ---
 
@@ -233,15 +246,16 @@ npm start
 - [NestJS Documentation](https://docs.nestjs.com)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs)
-- [Migration Plan](./MIGRATION_PLAN.md) - แผนการ migrate จากโค้ดเก่า
 
 ---
 
-## 🔄 Migration จากโค้ดเก่า
+## 🤝 Contributing
 
-โค้ดเก่า (React + Vite + Express + MongoDB) ถูกย้ายไปที่ `old/` folder แล้ว
-
-สามารถดูแผนการ migrate โดยละเอียดได้ที่ [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)
+1. Fork the project
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
 
 ---
 
